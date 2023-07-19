@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -19,8 +18,6 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-
 	mux := http.NewServeMux()
 
 	port := os.Getenv("PORT")
