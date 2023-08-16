@@ -13,6 +13,6 @@ type Service struct {
 
 func (s *Service) SayHello(context.Context, *connect_go.Request[v1alpha1.SayHelloRequest]) (*connect_go.Response[v1alpha1.SayHelloResponse], error) {
 	return connect_go.NewResponse(
-		&v1alpha1.SayHelloResponse{Message: "hello world"},
+		&v1alpha1.SayHelloResponse{Message: "hello world", Number: 1},
 	), nil
 }

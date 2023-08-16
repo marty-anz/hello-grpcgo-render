@@ -10,4 +10,7 @@ service Hello {
 
 message SayHelloRequest {}
 
-message SayHelloResponse { string message = 1; }
+message SayHelloResponse {
+  string message = 1;
+  int32 number = 2;
+}
