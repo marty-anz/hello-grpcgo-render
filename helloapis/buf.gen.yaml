@@ -3,6 +3,6 @@ plugins:
   - plugin: go
     out: ../pkg
     opt: paths=source_relative
-  - plugin: connect-go
+  - plugin: buf.build/connectrpc/go
     out: ../pkg
     opt: paths=source_relative

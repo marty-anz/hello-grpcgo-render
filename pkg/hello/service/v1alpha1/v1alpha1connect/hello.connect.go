@@ -5,9 +5,9 @@
 package v1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	v1alpha1 "github.com/marty-anz/hello-grpcgo-render/pkg/hello/service/v1alpha1"
 	http "net/http"
 	strings "strings"
@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// HelloName is the fully-qualified name of the Hello service.
@@ -35,11 +35,14 @@ const (
 const (
 	// HelloSayHelloProcedure is the fully-qualified name of the Hello's SayHello RPC.
 	HelloSayHelloProcedure = "/hello.service.v1alpha1.Hello/SayHello"
+	// HelloSayHelloErrorProcedure is the fully-qualified name of the Hello's SayHelloError RPC.
+	HelloSayHelloErrorProcedure = "/hello.service.v1alpha1.Hello/SayHelloError"
 )
 
 // HelloClient is a client for the hello.service.v1alpha1.Hello service.
 type HelloClient interface {
-	SayHello(context.Context, *connect_go.Request[v1alpha1.SayHelloRequest]) (*connect_go.Response[v1alpha1.SayHelloResponse], error)
+	SayHello(context.Context, *connect.Request[v1alpha1.SayHelloRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
+	SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
 }
 
 // NewHelloClient constructs a client for the hello.service.v1alpha1.Hello service. By default, it
@@ -49,12 +52,17 @@ type HelloClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewHelloClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) HelloClient {
+func NewHelloClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) HelloClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &helloClient{
-		sayHello: connect_go.NewClient[v1alpha1.SayHelloRequest, v1alpha1.SayHelloResponse](
+		sayHello: connect.NewClient[v1alpha1.SayHelloRequest, v1alpha1.SayHelloResponse](
 			httpClient,
 			baseURL+HelloSayHelloProcedure,
+			opts...,
+		),
+		sayHelloError: connect.NewClient[v1alpha1.SayHelloErrorRequest, v1alpha1.SayHelloResponse](
+			httpClient,
+			baseURL+HelloSayHelloErrorProcedure,
 			opts...,
 		),
 	}
@@ -62,17 +70,24 @@ func NewHelloClient(httpClient connect_go.HTTPClient, baseURL string, opts ...co
 
 // helloClient implements HelloClient.
 type helloClient struct {
-	sayHello *connect_go.Client[v1alpha1.SayHelloRequest, v1alpha1.SayHelloResponse]
+	sayHello      *connect.Client[v1alpha1.SayHelloRequest, v1alpha1.SayHelloResponse]
+	sayHelloError *connect.Client[v1alpha1.SayHelloErrorRequest, v1alpha1.SayHelloResponse]
 }
 
 // SayHello calls hello.service.v1alpha1.Hello.SayHello.
-func (c *helloClient) SayHello(ctx context.Context, req *connect_go.Request[v1alpha1.SayHelloRequest]) (*connect_go.Response[v1alpha1.SayHelloResponse], error) {
+func (c *helloClient) SayHello(ctx context.Context, req *connect.Request[v1alpha1.SayHelloRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error) {
 	return c.sayHello.CallUnary(ctx, req)
+}
+
+// SayHelloError calls hello.service.v1alpha1.Hello.SayHelloError.
+func (c *helloClient) SayHelloError(ctx context.Context, req *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error) {
+	return c.sayHelloError.CallUnary(ctx, req)
 }
 
 // HelloHandler is an implementation of the hello.service.v1alpha1.Hello service.
 type HelloHandler interface {
-	SayHello(context.Context, *connect_go.Request[v1alpha1.SayHelloRequest]) (*connect_go.Response[v1alpha1.SayHelloResponse], error)
+	SayHello(context.Context, *connect.Request[v1alpha1.SayHelloRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
+	SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
 }
 
 // NewHelloHandler builds an HTTP handler from the service implementation. It returns the path on
@@ -80,19 +95,36 @@ type HelloHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewHelloHandler(svc HelloHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(HelloSayHelloProcedure, connect_go.NewUnaryHandler(
+func NewHelloHandler(svc HelloHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	helloSayHelloHandler := connect.NewUnaryHandler(
 		HelloSayHelloProcedure,
 		svc.SayHello,
 		opts...,
-	))
-	return "/hello.service.v1alpha1.Hello/", mux
+	)
+	helloSayHelloErrorHandler := connect.NewUnaryHandler(
+		HelloSayHelloErrorProcedure,
+		svc.SayHelloError,
+		opts...,
+	)
+	return "/hello.service.v1alpha1.Hello/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case HelloSayHelloProcedure:
+			helloSayHelloHandler.ServeHTTP(w, r)
+		case HelloSayHelloErrorProcedure:
+			helloSayHelloErrorHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedHelloHandler returns CodeUnimplemented from all methods.
 type UnimplementedHelloHandler struct{}
 
-func (UnimplementedHelloHandler) SayHello(context.Context, *connect_go.Request[v1alpha1.SayHelloRequest]) (*connect_go.Response[v1alpha1.SayHelloResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("hello.service.v1alpha1.Hello.SayHello is not implemented"))
+func (UnimplementedHelloHandler) SayHello(context.Context, *connect.Request[v1alpha1.SayHelloRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("hello.service.v1alpha1.Hello.SayHello is not implemented"))
+}
+
+func (UnimplementedHelloHandler) SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("hello.service.v1alpha1.Hello.SayHelloError is not implemented"))
 }
