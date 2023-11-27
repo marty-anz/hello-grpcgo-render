@@ -42,7 +42,7 @@ const (
 // HelloClient is a client for the hello.service.v1alpha1.Hello service.
 type HelloClient interface {
 	SayHello(context.Context, *connect.Request[v1alpha1.SayHelloRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
-	SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
+	SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloErrorResponse], error)
 }
 
 // NewHelloClient constructs a client for the hello.service.v1alpha1.Hello service. By default, it
@@ -60,7 +60,7 @@ func NewHelloClient(httpClient connect.HTTPClient, baseURL string, opts ...conne
 			baseURL+HelloSayHelloProcedure,
 			opts...,
 		),
-		sayHelloError: connect.NewClient[v1alpha1.SayHelloErrorRequest, v1alpha1.SayHelloResponse](
+		sayHelloError: connect.NewClient[v1alpha1.SayHelloErrorRequest, v1alpha1.SayHelloErrorResponse](
 			httpClient,
 			baseURL+HelloSayHelloErrorProcedure,
 			opts...,
@@ -71,7 +71,7 @@ func NewHelloClient(httpClient connect.HTTPClient, baseURL string, opts ...conne
 // helloClient implements HelloClient.
 type helloClient struct {
 	sayHello      *connect.Client[v1alpha1.SayHelloRequest, v1alpha1.SayHelloResponse]
-	sayHelloError *connect.Client[v1alpha1.SayHelloErrorRequest, v1alpha1.SayHelloResponse]
+	sayHelloError *connect.Client[v1alpha1.SayHelloErrorRequest, v1alpha1.SayHelloErrorResponse]
 }
 
 // SayHello calls hello.service.v1alpha1.Hello.SayHello.
@@ -80,14 +80,14 @@ func (c *helloClient) SayHello(ctx context.Context, req *connect.Request[v1alpha
 }
 
 // SayHelloError calls hello.service.v1alpha1.Hello.SayHelloError.
-func (c *helloClient) SayHelloError(ctx context.Context, req *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error) {
+func (c *helloClient) SayHelloError(ctx context.Context, req *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloErrorResponse], error) {
 	return c.sayHelloError.CallUnary(ctx, req)
 }
 
 // HelloHandler is an implementation of the hello.service.v1alpha1.Hello service.
 type HelloHandler interface {
 	SayHello(context.Context, *connect.Request[v1alpha1.SayHelloRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
-	SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error)
+	SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloErrorResponse], error)
 }
 
 // NewHelloHandler builds an HTTP handler from the service implementation. It returns the path on
@@ -125,6 +125,6 @@ func (UnimplementedHelloHandler) SayHello(context.Context, *connect.Request[v1al
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("hello.service.v1alpha1.Hello.SayHello is not implemented"))
 }
 
-func (UnimplementedHelloHandler) SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloResponse], error) {
+func (UnimplementedHelloHandler) SayHelloError(context.Context, *connect.Request[v1alpha1.SayHelloErrorRequest]) (*connect.Response[v1alpha1.SayHelloErrorResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("hello.service.v1alpha1.Hello.SayHelloError is not implemented"))
 }
